@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+
+    demospringfilesbackend:
+        image: orbartal/demo-spring-files-backend:latest
+        hostname: demospringfilesbackend
+        container_name: demospringfilesbackend
+        restart: always
+        networks:
+            - demo-tester-spring-files
+        ports:
+            - 8080:8080
+        environment:
+            - FILE_METADATA_SERVICE=java.in.memory.map  
+            - FILE_STORAGE_SERVICE=local.filesystem.temp
+            - FILE_STORAGE_TEMP_DIR=\temp\demo
+
+    demospringfilestester:
+        image: orbartal/demo-spring-files-tester:latest
+        hostname: demospringmongotester
+        container_name: demospringmongotester
+        restart: always
+        networks:
+            - demo-tester-spring-files
+        ports:
+            - 8081:8081
+        depends_on:
+            - demospringfilesbackend
+        environment:
+            - TARGET_BASE_URL=http://demospringfilesbackend:8080
+
+networks:
+    demo-tester-spring-files:
