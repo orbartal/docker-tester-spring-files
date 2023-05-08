@@ -1,0 +1,105 @@
+version: "3"
+
+services:
+
+    #redis: Third party open source redis db
+    redis:
+        image: redis:latest
+        hostname: redis
+        ports:
+            - 6379:6379
+        networks:
+            - demo-tester-spring-files-redis-hadoop
+        volumes:
+            - redis-data:/data
+
+    #redis-commander: Third party open source gui for redis db
+    redis-commander:
+        image: rediscommander/redis-commander:latest
+        hostname: rediscommander
+        depends_on:
+            - redis
+        ports:
+            - 8081:8081
+        networks:
+            - demo-tester-spring-files-redis-hadoop    
+        environment:
+            - REDIS_HOSTS=local:redis:6379
+            - HTTP_USER=admin
+            - HTTP_PASSWORD=pass
+
+    #namenode: Third party open source hadoop master node
+    namenode:
+        image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+        hostname: namenode
+        container_name: namenode
+        restart: always
+        depends_on:
+          - datanode
+        networks:
+          - demo-tester-spring-files-redis-hadoop
+        ports:
+          - 9870:9870
+          - 9000:9000
+        volumes:
+          - hadoop_namenode:/hadoop/dfs/name
+        environment:
+          - CLUSTER_NAME=test
+        env_file:
+          - ./hadoop.env
+
+    #datanode: Third party open source hadoop worker node
+    datanode:
+        image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+        hostname: datanode
+        container_name: datanode
+        restart: always
+        networks:
+          - demo-tester-spring-files-redis-hadoop
+        ports:
+          - 9864:9864
+        volumes:
+          - hadoop_datanode:/hadoop/dfs/data
+        environment:
+          SERVICE_PRECONDITION: "namenode:9870"
+        env_file:
+          - ./hadoop.env
+
+    #demospringfilesbackend: Or Bartal project in GitHub: https://github.com/orbartal/springboot-files-storage
+    demospringfilesbackend:
+        image: orbartal/demo-spring-files-backend:latest
+        hostname: demospringfilesbackend
+        container_name: demospringfilesbackend
+        restart: always
+        networks:
+            - demo-tester-spring-files-redis-hadoop
+        ports:
+            - 8080:8080
+        environment:
+            - FILE_METADATA_SERVICE=redis
+            - FILE_STORAGE_SERVICE=hadoop
+            - SPRING_REDIS_HOST=redis
+            - SPRING_REDIS_PORT=6379
+
+    #demospringfilesbackend: Or Bartal project in GitHub: https://github.com/orbartal/springboot-files-storage-tester
+    demospringfilestester:
+        image: orbartal/demo-spring-files-tester:latest
+        hostname: demospringmongotester
+        container_name: demospringmongotester
+        restart: always
+        networks:
+            - demo-tester-spring-files-redis-hadoop
+        ports:
+            - 8090:8090
+        depends_on:
+            - demospringfilesbackend
+        environment:
+            - TARGET_BASE_URL=http://demospringfilesbackend:8080
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  redis-data:
+  
+networks:
+ demo-tester-spring-files-redis-hadoop:
