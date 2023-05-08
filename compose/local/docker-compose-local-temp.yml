@@ -14,7 +14,7 @@ services:
         environment:
             - FILE_METADATA_SERVICE=java.in.memory.map  
             - FILE_STORAGE_SERVICE=local.filesystem.temp
-            - FILE_STORAGE_TEMP_DIR=\temp\demo
+            - FILE_STORAGE_DIR=\temp\demo
 
     demospringfilestester:
         image: orbartal/demo-spring-files-tester:latest
